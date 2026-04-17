@@ -90,6 +90,20 @@ def parse_and_publish(state: BridgeState, line: str) -> None:
                 payload["path"] = packet_match.group(14)
 
         message.update(payload)
+
+        brokers = state.config.get('broker', [])
+
+        for i, broker in enumerate(brokers):
+            enabled = broker.get('enabled', False)
+            if enabled:
+                publish_packet(state, i, message)
+
+def publish_packet(state: BridgeState, brokerIdx: int, message: str):
+    packets_topic = topics.get_topic(state, "packets", brokerIdx)
+
+    if packets_topic:
+        safe_publish(state, packets_topic, json.dumps(message))
+    else:
         packets_topic = topics.get_topic(state, "packets")
         if packets_topic:
             safe_publish(state, packets_topic, json.dumps(message))
